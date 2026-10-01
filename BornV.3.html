@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ไหน ๆ ก็เกิดมาแล้ว - Dual Tone Edition</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap');
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+
+        body {
+            background-color: #030005;
+            color: #f0f0f5;
+            font-family: 'Sarabun', sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        #game-container {
+            width: 1000px;
+            height: 700px;
+            background-color: #07040a;
+            border: 2px solid #3d2f5c;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(50, 20, 100, 0.4), inset 0 0 50px rgba(0,0,0,0.9);
+        }
+
+        /* Screen Shake Effect */
+        @keyframes shake {
+            0% { transform: translate(2px, 2px) rotate(0deg); }
+            20% { transform: translate(-4px, 1px) rotate(-1deg); }
+            40% { transform: translate(2px, -2px) rotate(1deg); }
+            60% { transform: translate(-2px, 3px) rotate(0deg); }
+            80% { transform: translate(-4px, 2px) rotate(-1deg); }
+            100% { transform: translate(2px, -3px) rotate(1deg); }
+        }
+        .shake {
+            animation: shake 0.35s infinite;
+        }
+
+        /* Language Selection Screen (First Screen) */
+        #language-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #1c0d2b 0%, #030008 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            text-align: center;
+            padding: 40px;
+        }
+        #language-screen h1 {
+            font-size: 42px;
+            color: #f0edff;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(130, 80, 255, 0.6);
+        }
+        #language-screen p {
+            font-size: 18px;
+            color: #b399cc;
+            margin-bottom: 35px;
+        }
+
+        /* Content Warning Overlay (Second Screen) */
+        #warning-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #1c0d2b 0%, #030008 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 150;
+            text-align: center;
+            padding: 40px;
+            display: none; /* ซ่อนไว้ก่อนจนกว่าจะเลือกภาษา */
+        }
+        #warning-screen h2 {
+            font-size: 32px;
+            color: #ff7575;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            text-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+        }
+        .warning-box {
+            background: rgba(15, 8, 25, 0.85);
+            border: 1px solid #5a3d8c;
+            border-radius: 10px;
+            padding: 22px 30px;
+            max-width: 750px;
+            margin-bottom: 25px;
+            text-align: left;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+        .warning-box ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .warning-box li {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #e2daf0;
+            margin-bottom: 6px;
+        }
+        .warning-box p {
+            font-size: 17px;
+            line-height: 1.6;
+            color: #ffb3b3;
+            margin-top: 15px;
+        }
+        .warning-author {
+            font-size: 15px;
+            color: #a385ff;
+            text-align: right;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        .lang-buttons, .action-buttons {
+            display: flex;
+            gap: 20px;
+        }
+        .action-btn, .lang-btn {
+            background: linear-gradient(135deg, rgba(45, 30, 80, 0.95), rgba(20, 10, 40, 0.95));
+            border: 2px solid #7a52c7;
+            color: #f0edff;
+            padding: 12px 30px;
+            font-size: 18px;
+            font-family: 'Sarabun', sans-serif;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.25s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+        .action-btn:hover, .lang-btn:hover {
+            background: linear-gradient(135deg, rgba(70, 45, 120, 0.95), rgba(35, 18, 70, 0.95));
+            border-color: #b899ff;
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(130, 80, 255, 0.4);
+        }
+
+        /* Scene & Visual Art Canvas Area */
+        #scene-view {
+            flex: 1;
+            position: relative;
+            background: radial-gradient(circle at center, #140b24 0%, #030105 100%);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        svg.art-canvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Floating Pressure Texts */
+        .pressure-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 10;
+        }
+        .floating-text {
+            position: absolute;
+            color: rgba(255, 120, 120, 0.95);
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'Sarabun', sans-serif;
+            animation: floatText 3s infinite ease-in-out;
+            text-shadow: 0 0 12px rgba(255, 0, 0, 0.8), 0 2px 4px rgba(0,0,0,0.9);
+        }
+        @keyframes floatText {
+            0% { transform: translateY(0px) scale(0.95) rotate(-2deg); opacity: 0.4; }
+            50% { transform: translateY(-22px) scale(1.12) rotate(1deg); opacity: 1; }
+            100% { transform: translateY(0px) scale(0.95) rotate(-2deg); opacity: 0.4; }
+        }
+
+        /* UI Dialog Box */
+        #ui-box {
+            height: 230px;
+            background: linear-gradient(to bottom, rgba(15, 10, 25, 0.98), rgba(5, 3, 10, 0.98));
+            border-top: 3px solid #5a3d8c;
+            padding: 22px 35px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            z-index: 20;
+            box-shadow: inset 0 2px 15px rgba(100, 50, 255, 0.15);
+        }
+
+        #speaker-name {
+            font-size: 21px;
+            font-weight: 700;
+            color: #a385ff;
+            margin-bottom: 6px;
+            letter-spacing: 1px;
+            text-shadow: 0 0 10px rgba(130, 80, 255, 0.4);
+        }
+
+        #dialog-text {
+            font-size: 24px;
+            line-height: 1.5;
+            color: #f0edff;
+            flex: 1;
+            overflow-y: auto;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+        }
+
+        #prompt-hint {
+            font-size: 14px;
+            color: #8c73b3;
+            text-align: right;
+            animation: blink 1.5s infinite;
+        }
+        @keyframes blink {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        /* Choices Panel */
+        #choices-container {
+            position: absolute;
+            bottom: 250px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 82%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 30;
+        }
+
+        .choice-btn {
+            background: linear-gradient(135deg, rgba(20, 15, 35, 0.95), rgba(8, 5, 15, 0.95));
+            border: 2px solid #5a3d8c;
+            color: #f0edff;
+            padding: 13px 22px;
+            font-size: 20px;
+            font-family: 'Sarabun', sans-serif;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.25s ease;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.8);
+        }
+        .choice-btn:hover:not(.disabled) {
+            background: linear-gradient(135deg, rgba(45, 30, 80, 0.95), rgba(25, 15, 45, 0.95));
+            border-color: #9d75ff;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(130, 80, 255, 0.4);
+        }
+        .choice-btn.disabled {
+            background: linear-gradient(135deg, rgba(15, 12, 20, 0.9), rgba(8, 6, 10, 0.9));
+            border-color: #332842;
+            color: #73668a;
+            cursor: not-allowed;
+        }
+
+        /* Chapter Title Overlay */
+        #chapter-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 3, 10, 0.92);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        #chapter-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        #chapter-overlay h2 {
+            font-size: 42px;
+            color: #9d75ff;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(130, 80, 255, 0.7);
+            margin-bottom: 10px;
+        }
+        #chapter-overlay p {
+            font-size: 20px;
+            color: #b399cc;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- 1. Language Selection Screen (First Screen) -->
+        <div id="language-screen">
+            <h1>🌐 กรุณาเลือกภาษา / Select Language</h1>
+            <p>โปรดเลือกภาษาที่ต้องการใช้เล่นเกม</p>
+            <div class="lang-buttons">
+                <button class="lang-btn" onclick="selectLanguage('th')">🇹🇭 ภาษาไทย</button>
+                <button class="lang-btn" onclick="selectLanguage('en')">🇬🇧 English</button>
+            </div>
+        </div>
+
+        <!-- 2. Content Warning Screen (Second Screen) -->
+        <div id="warning-screen">
+            <h2 id="warn-title">⚠️ คำเตือนเนื้อหา</h2>
+            <div class="warning-box">
+                <p id="warn-intro" style="margin-top:0; margin-bottom:10px; font-weight:600; color:#f0edff;">เกมนี้มีเนื้อหาเกี่ยวกับ:</p>
+                <ul>
+                    <li id="warn-1">• ความขัดแย้งภายในครอบครัว</li>
+                    <li id="warn-2">• การทำร้ายร่างกายและจิตใจ</li>
+                    <li id="warn-3">• การละเลยและทอดทิ้งเด็ก</li>
+                    <li id="warn-4">• แรงกดดันจากผู้ปกครอง</li>
+                    <li id="warn-5">• ปัญหาทางการเงิน</li>
+                    <li id="warn-6">• และบาดแผลทางจิตใจ</li>
+                </ul>
+                <p id="warn-desc">บางฉากอาจสร้างความรู้สึกไม่สบายใจหรือกระทบต่อจิตใจของผู้เล่น หากรู้สึกไม่ไหว คุณสามารถหยุดเล่นได้</p>
+                <div class="warning-author">— L. ASH</div>
+            </div>
+            <div class="action-buttons">
+                <button class="action-btn" id="btn-start-game" onclick="startGame()">▶ เริ่มต้นเข้าสู่เกม / Start Game</button>
+            </div>
+        </div>
+
+        <!-- Chapter Overlay -->
+        <div id="chapter-overlay">
+            <h2 id="chap-title">CHAPTER</h2>
+            <p id="chap-subtitle">Subtext...</p>
+        </div>
+
+        <!-- Scene & High Quality Art View -->
+        <div id="scene-view">
+            <div id="pressure-box" class="pressure-container"></div>
+            <svg id="art-canvas" class="art-canvas" viewBox="0 0 1000 470"></svg>
+        </div>
+
+        <!-- Choices Area -->
+        <div id="choices-container"></div>
+
+        <!-- Dialog Box -->
+        <div id="ui-box" onclick="handleDialogClick()">
+            <div>
+                <div id="speaker-name"></div>
+                <div id="dialog-text"></div>
+            </div>
+            <div id="prompt-hint" class="prompt-hint-text">[ คลิก หรือ กด SPACEBAR เพื่อไปต่อ ]</div>
+        </div>
+    </div>
+
+    <script>
+        let currentLang = 'th';
+
+        // Dictionary สำหรับภาษาไทยและอังกฤษ
+        const i18n = {
+            th: {
+                warningTitle: "⚠️ คำเตือนเนื้อหา",
+                warningIntro: "เกมนี้มีเนื้อหาเกี่ยวกับ:",
+                warnings: [
+                    "• ความขัดแย้งภายในครอบครัว",
+                    "• การทำร้ายร่างกายและจิตใจ",
+                    "• การละเลยและทอดทิ้งเด็ก",
+                    "• แรงกดดันจากผู้ปกครอง",
+                    "• ปัญหาทางการเงิน",
+                    "• และบาดแผลทางจิตใจ"
+                ],
+                warningDesc: "บางฉากอาจสร้างความรู้สึกไม่สบายใจหรือกระทบต่อจิตใจของผู้เล่น หากรู้สึกไม่ไหว คุณสามารถหยุดเล่นได้",
+                startBtn: "▶ เริ่มต้นเข้าสู่เกม",
+                promptHint: "[ คลิก หรือ กด SPACEBAR เพื่อไปต่อ ]",
+                creditsEnd: "(จบเกม — ขอบคุณที่ร่วมสัมผัสเรื่องราว)"
+            },
+            en: {
+                warningTitle: "⚠️ Content Warning",
+                warningIntro: "This game contains themes of:",
+                warnings: [
+                    "• Family conflicts",
+                    "• Emotional and physical abuse",
+                    "• Child neglect and abandonment",
+                    "• Parental pressure",
+                    "• Financial distress",
+                    "• And psychological trauma"
+                ],
+                warningDesc: "Some scenes may evoke discomfort or emotional distress. If it becomes too much, feel free to stop playing at any time.",
+                startBtn: "▶ Start Game",
+                promptHint: "[ Click or Press SPACEBAR to Continue ]",
+                creditsEnd: "(End of Game — Thank you for experiencing this story)"
+            }
+        };
+
+        const scriptData = {
+            th: [
+                { speaker: "", text: "[เสียงผู้ใหญ่คุยกันในความมืด...]", bg: "dark", char: "none" },
+                { speaker: "บ้านลิน", text: "“ตอนนั้นพ่อกับแม่ก็ไม่ได้พร้อมหรอก”", bg: "lin_house", char: "parents_shadow_red" },
+                { speaker: "บ้านลิน", text: "“แต่เรามีเงิน มีบ้าน อย่างน้อยลูกก็ไม่ลำบาก”", bg: "lin_house", char: "parents_shadow_red" },
+                { speaker: "บ้านนนท์", text: "“ตอนนั้นก็ไม่ได้พร้อมเหมือนกัน”", bg: "non_house", char: "parents_shadow_blue" },
+                { speaker: "บ้านนนท์", text: "“แต่เขาก็เกิดมาแล้ว จะให้ทำยังไง”", bg: "non_house", char: "parents_shadow_blue" },
+                
+                { type: "chapter", title: "CHAPTER I", subtitle: "เด็กหญิงกับเด็กชาย (อายุ 6 ขวบ)" },
+                { speaker: "บ้านลิน", text: "ลินกลับจากโรงเรียน เอากระดาษให้แม่ คะแนน 92/100", bg: "lin_house", char: "lin_child" },
+                { speaker: "แม่ (ลิน)", text: "“เก่งมาก... แต่ทำไมผิดข้อนี้ล่ะ?”", bg: "lin_house", char: "parents_shadow_red" },
+                { speaker: "บ้านนนท์", text: "นนท์กลับบ้าน เอากระดาษคะแนน 72/100 ให้แม่", bg: "non_house", char: "non_child" },
+                { speaker: "แม่ (นนท์)", text: "“ดีแล้วลูก” (แม่กำลังนับเงินในกระเป๋า)", bg: "non_house", char: "parents_shadow_blue" },
+                { speaker: "แม่ (นนท์)", text: "“พรุ่งนี้ช่วยดูน้องให้แม่ด้วยนะ แม่ต้องไปทำงาน”", bg: "non_house", char: "parents_shadow_blue" },
+
+                { type: "chapter", title: "CHAPTER II", subtitle: "รอยร้าวในบ้าน (อายุ 12–13 ปี)" },
+                { speaker: "บ้านลิน", text: "พ่อแม่ทะเลาะกันเรื่องอนาคตของลูก: “โรงเรียนนี้ค่าเทอมปีละเท่าไหร่รู้ไหม? ถ้าจะส่งแล้ว ก็ต้องเอาให้สุด ลินต้องสอบติดให้ได้”", bg: "lin_house", char: "parents_shadow_red" },
+                { speaker: "บ้านลิน", text: "ลินยืนฟังอยู่หลังประตู พ่อหันมาเห็น “แล้วมายืนทำอะไรทำไม? ไปอ่านหนังสือสิ!”", bg: "lin_house", char: "lin_child" },
+                { speaker: "บ้านนนท์", text: "กลางคืน เสียงพ่อแม่ทะเลาะกันเรื่องเงิน: “เดือนนี้ค่าไฟยังไม่ได้จ่ายเลย!” — “ก็เงินมันไม่พอ!” — “แล้วจะมีลูกทำไมตั้งสองคน!”", bg: "non_house", char: "parents_shadow_blue" },
+                { speaker: "บ้านนนท์", text: "[เงียบ] นนท์อยู่ในห้อง แล้วได้ยินแม่พูดเบา ๆ “ถ้าย้อนกลับไปได้…ฉันคงไม่เอาเขาไว้”", bg: "non_house", char: "non_child" },
+                { speaker: "นนท์", text: "[นนท์หยุดหายใจไปชั่วขณะ]", bg: "dark", char: "non_child" },
+
+                { type: "lin_decision" },
+                { type: "non_decision" },
+
+                { type: "chapter", title: "CHAPTER III", subtitle: "ทางแยก (อายุ 18 ปี)" },
+                { speaker: "โรงเรียนเก่า", text: "ครูถามลิน: “แล้วลินจะเรียนอะไรต่อ?” / ลิน: “หนูยังไม่แน่ใจค่ะ” / ครู: “ไม่เป็นไร ค่อย ๆ คิดก็ได้”", bg: "school", char: "lin_teen" },
+                { speaker: "โรงเรียนเก่า", text: "ครูถามนนท์: “แล้วนนท์ล่ะ? มหาวิทยาลัยไหน?” / นนท์ (เงียบ): “ผม...ยังไม่รู้ครับ ผมไม่ได้สมัครครับ... ไม่มีเงินครับ” (ครูเงียบ)", bg: "school", char: "non_teen" },
+                { speaker: "บ้านลิน (PEAK)", text: "ลินทะเลาะกับพ่อแม่: “หนูไม่อยากเป็นแบบที่พ่อกับแม่ต้องการ!” / พ่อ: “แล้วพ่อแม่ผิดตรงไหน?” / แม่: “เราทำทุกอย่างให้แกนะ”", bg: "lin_house", char: "lin_teen" },
+                { speaker: "ลิน", text: "“หนูไม่เคยขอให้เกิดมาด้วยซ้ำ!” [เงียบ] พ่อแม่หยุดพูด", bg: "lin_house", char: "lin_teen" },
+                { speaker: "บ้านนนท์ (PEAK)", text: "เขากลับบ้าน บ้านเงียบ แม่กำลังเก็บของใส่ถุง / นนท์: “แม่จะไปไหน?” / แม่: “ไปทำงาน” / นนท์: “วันนี้ไม่ต้องไปก็ได้” / แม่: “ไม่ได้”", bg: "non_house", char: "non_teen" },
+                { speaker: "แม่ (นนท์)", text: "แล้วแม่พูดประโยคเดิมที่คนเล่นเคยได้ยินตอนเด็ก: “ก็ไหน ๆ แกก็เกิดมาแล้ว”", bg: "non_house", char: "parents_shadow_blue" },
+                { speaker: "นนท์", text: "นนท์มองแม่ แล้วตอบว่า: “ผมไม่ได้ขอให้แม่มีผมนะ”", bg: "non_house", char: "non_teen" },
+                { speaker: "เสียงแม่", text: "[แม่หยุด] แล้วเกมตัดภาพ... ได้ยินแค่เสียงแม่: “แม่รู้… แม่ขอโทษ”", bg: "dark", char: "none" },
+                { speaker: "นนท์", text: "นนท์ตอบ: “ผมไม่ได้อยากได้คำขอโทษ ผมแค่อยากให้แม่ไม่พูดว่าเสียดายที่มีผม”", bg: "dark", char: "non_teen" },
+
+                { type: "chapter", title: "EPILOGUE", subtitle: "จุดเริ่มต้นของทุกอย่าง" },
+                { speaker: "TWIST", text: "18 YEARS EARLIER (คนเล่นคิดว่าเกมจบแล้ว แต่เสียงเด็กทารกร้องขึ้นมา...)", bg: "dark", char: "none", action: "play_baby" },
+                { speaker: "เสียงพ่อแม่ลิน", text: "“เราจะเลี้ยงเขาให้ดีที่สุด”", bg: "dark", char: "none" },
+                { speaker: "เสียงพ่อแม่นนท์", text: "“ไม่รู้จะเลี้ยงไหวไหม…” / “ไม่พร้อมก็ไม่เป็นไร เดี๋ยวก็รักลูกเอง”", bg: "dark", char: "none" },
+                { speaker: "เสียงบรรยาย", text: "“แต่เด็กไม่ได้มีโอกาสเลือกว่าจะเกิดในวันที่พ่อแม่พร้อมหรือไม่”", bg: "dark", char: "none" },
+
+                { type: "final_question" },
+                { type: "credits" }
+            ],
+            en: [
+                { speaker: "", text: "[Voices of adults talking in the dark...]", bg: "dark", char: "none" },
+                { speaker: "Lin's Home", text: "\"Back then, your mom and dad weren't ready either.\"", bg: "lin_house", char: "parents_shadow_red" },
+                { speaker: "Lin's Home", text: "\"But we had money, a house. At least the child won't struggle.\"", bg: "lin_house", char: "parents_shadow_red" },
+                { speaker: "Non's Home", text: "\"We weren't ready back then either.\"", bg: "non_house", char: "parents_shadow_blue" },
+                { speaker: "Non's Home", text: "\"But they're already born. What else could we do?\"", bg: "non_house", char: "parents_shadow_blue" },
+                
+                { type: "chapter", title: "CHAPTER I", subtitle: "The Boy and The Girl (Age 6)" },
+                { speaker: "Lin's Home", text: "Lin returns from school and shows her mom her test: 92/100.", bg: "lin_house", char: "lin_child" },
+                { speaker: "Mom (Lin)", text: "\"Great... but why did you miss this question?\"", bg: "lin_house", char: "parents_shadow_red" },
+                { speaker: "Non's Home", text: "Non returns home and hands his mom his test: 72/100.", bg: "non_house", char: "non_child" },
+                { speaker: "Mom (Non)", text: "\"Good enough.\" (Mom is busy counting money in her wallet)", bg: "non_house", char: "parents_shadow_blue" },
+                { speaker: "Mom (Non)", text: "\"Tomorrow, watch your younger sibling. I have to go to work.\"", bg: "non_house", char: "parents_shadow_blue" },
+
+                { type: "chapter", title: "CHAPTER II", subtitle: "Cracks in the Home (Age 12–13)" },
+                { speaker: "Lin's Home", text: "Parents arguing about their child's future: \"Do you know how much tuition costs? If we're sending her, she has to go all the way. Lin must pass!\"", bg: "lin_house", char: "parents_shadow_red" },
+                { speaker: "Lin's Home", text: "Lin listens behind the door. Her father turns around: \"What are you standing there for? Go read your book!\"", bg: "lin_house", char: "lin_child" },
+                { speaker: "Non's Home", text: "At night, parents fighting over money: \"The electricity bill hasn't been paid!\" — \"We don't have enough!\" — \"Then why did you have two kids?!\"", bg: "non_house", char: "parents_shadow_blue" },
+                { speaker: "Non's Home", text: "[Silence] Non is in his room and hears his mom whisper: \"If I could turn back time… I wouldn't have kept him.\"", bg: "non_house", char: "non_child" },
+                { speaker: "Non", text: "[Non stops breathing for a moment]", bg: "dark", char: "non_child" },
+
+                { type: "lin_decision" },
+                { type: "non_decision" },
+
+                { type: "chapter", title: "CHAPTER III", subtitle: "The Crossroads (Age 18)" },
+                { speaker: "Old School", text: "Teacher asks Lin: \"What will you study next?\" / Lin: \"I'm not sure yet.\" / Teacher: \"That's okay, take your time.\"", bg: "school", char: "lin_teen" },
+                { speaker: "Old School", text: "Teacher asks Non: \"What about you, Non? Which university?\" / Non (silent): \"I... don't know. I didn't apply... I have no money.\" (Teacher goes silent)", bg: "school", char: "non_teen" },
+                { speaker: "Lin's Home (PEAK)", text: "Lin argues with her parents: \"I don't want what you want for me!\" / Father: \"Where did we go wrong?\" / Mother: \"We did everything for you!\"", bg: "lin_house", char: "lin_teen" },
+                { speaker: "Lin", text: "\"I never asked to be born in the first place!\" [Silence] Parents stop talking.", bg: "lin_house", char: "lin_teen" },
+                { speaker: "Non's Home (PEAK)", text: "He returns home. The house is quiet. Mom is packing a bag / Non: \"Where are you going?\" / Mom: \"To work.\" / Non: \"You don't have to go today.\" / Mom: \"I have to.\"", bg: "non_house", char: "non_teen" },
+                { speaker: "Mom (Non)", text: "Then Mom says the same phrase heard in childhood: \"Since you're already born anyway.\"", bg: "non_house", char: "parents_shadow_blue" },
+                { speaker: "Non", text: "Non looks at his mom and replies: \"I never asked you to have me.\"", bg: "non_house", char: "non_teen" },
+                { speaker: "Mom's Voice", text: "[Mom stops] The screen cuts... Only Mom's voice is heard: \"I know... I'm sorry.\"", bg: "dark", char: "none" },
+                { speaker: "Non", text: "Non replies: \"I don't want an apology. I just wish you didn't regret having me.\"", bg: "dark", char: "non_teen" },
+
+                { type: "chapter", title: "EPILOGUE", subtitle: "The Origin of Everything" },
+                { speaker: "TWIST", text: "18 YEARS EARLIER (Players think the game is over, but a baby starts crying...)", bg: "dark", char: "none", action: "play_baby" },
+                { speaker: "Lin's Parents", text: "\"We will raise her the best we can.\"", bg: "dark", char: "none" },
+                { speaker: "Non's Parents", text: "\"I don't know if we can afford this...\" / \"If we aren't ready, it's fine. We'll love the child anyway.\"", bg: "dark", char: "none" },
+                { speaker: "Narrator", text: "\"Yet children never get to choose whether they are born on a day their parents are ready or not.\"", bg: "dark", char: "none" },
+
+                { type: "final_question" },
+                { type: "credits" }
+            ]
+        };
+
+        let script = [];
+        let currentIndex = 0;
+        let isTyping = false;
+        let charTimer = null;
+        let displayedString = "";
+        let fullString = "";
+        let mouthOpen = false;
+        let mouthTimer = null;
+
+        // --- Web Audio API ---
+        let audioCtx = null;
+        let isAudioInit = false;
+
+        function initAudio() {
+            if (isAudioInit) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            isAudioInit = true;
+        }
+
+        function playMurmurSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            const freq = 140 + Math.random() * 90;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.05);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.05);
+        }
+
+        function playPressureSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(75, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.4);
+            gain.gain.setValueAtTime(0.07, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.4);
+        }
+
+        function playErrorSound() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(90, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(60, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.09, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function playBabyCry() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(520, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(780, audioCtx.currentTime + 0.3);
+            osc.frequency.linearRampToValueAtTime(580, audioCtx.currentTime + 0.6);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.8);
+        }
+
+        function selectLanguage(lang) {
+            currentLang = lang;
+            script = scriptData[lang];
+            
+            // อัปเดตข้อความในหน้าคำเตือนตามภาษาที่เลือก
+            const t = i18n[lang];
+            document.getElementById("warn-title").innerText = t.warningTitle;
+            document.getElementById("warn-intro").innerText = t.warningIntro;
+            
+            const warnItems = document.querySelectorAll(".warning-box ul li");
+            t.warnings.forEach((text, idx) => {
+                if (warnItems[idx]) warnItems[idx].innerText = text;
+            });
+
+            document.getElementById("warn-desc").innerText = t.warningDesc;
+            document.getElementById("btn-start-game").innerText = t.startBtn;
+            document.querySelectorAll(".prompt-hint-text").forEach(el => el.innerText = t.promptHint);
+
+            // ซ่อนหน้าเลือกภาษา แสดงหน้าคำเตือน
+            document.getElementById("language-screen").style.display = "none";
+            document.getElementById("warning-screen").style.display = "flex";
+        }
+
+        const speakerEl = document.getElementById("speaker-name");
+        const dialogEl = document.getElementById("dialog-text");
+        const choicesContainer = document.getElementById("choices-container");
+        const warningScreen = document.getElementById("warning-screen");
+        const chapterOverlay = document.getElementById("chapter-overlay");
+        const chapTitle = document.getElementById("chap-title");
+        const chapSubtitle = document.getElementById("chap-subtitle");
+        const artCanvas = document.getElementById("art-canvas");
+        const pressureBox = document.getElementById("pressure-box");
+
+        function startGame() {
+            initAudio();
+            warningScreen.style.display = "none";
+            loadStep();
+        }
+
+        function loadStep() {
+            choicesContainer.innerHTML = "";
+            pressureBox.innerHTML = "";
+            document.body.classList.remove("shake");
+            chapterOverlay.classList.remove("show");
+
+            if (currentIndex >= script.length) return;
+
+            const current = script[currentIndex];
+
+            if (current.type === "chapter") {
+                renderChapterCard(current.title, current.subtitle);
+                return;
+            }
+            if (current.type === "lin_decision") { renderLinDecision(); return; }
+            if (current.type === "non_decision") { renderNonDecision(); return; }
+            if (current.type === "final_question") { renderFinalQuestion(); return; }
+            if (current.type === "credits") { renderCredits(); return; }
+
+            if (current.action === "play_baby") { playBabyCry(); }
+
+            speakerEl.innerText = current.speaker || " ";
+            fullString = current.text;
+            displayedString = "";
+            dialogEl.innerText = "";
+
+            drawSceneArt(current.bg, current.char);
+            startTypewriter();
+        }
+
+        function renderChapterCard(title, subtitle) {
+            chapTitle.innerText = title;
+            chapSubtitle.innerText = subtitle;
+            chapterOverlay.classList.add("show");
+            playPressureSound();
+
+            setTimeout(() => {
+                chapterOverlay.classList.remove("show");
+                currentIndex++;
+                loadStep();
+            }, 3200);
+        }
+
+        function startTypewriter() {
+            isTyping = true;
+            let charIndex = 0;
+            if (charTimer) clearInterval(charTimer);
+            if (mouthTimer) clearInterval(mouthTimer);
+
+            mouthTimer = setInterval(() => {
+                mouthOpen = !mouthOpen;
+                const current = script[currentIndex];
+                if (current) drawSceneArt(current.bg, current.char, mouthOpen);
+            }, 110);
+
+            charTimer = setInterval(() => {
+                if (charIndex < fullString.length) {
+                    displayedString += fullString.charAt(charIndex);
+                    dialogEl.innerText = displayedString;
+                    if (charIndex % 2 === 0) playMurmurSound();
+                    charIndex++;
+                } else {
+                    clearInterval(charTimer);
+                    clearInterval(mouthTimer);
+                    mouthOpen = false;
+                    const current = script[currentIndex];
+                    if (current) drawSceneArt(current.bg, current.char, false);
+                    isTyping = false;
+                }
+            }, 30);
+        }
+
+        function handleDialogClick() {
+            if (warningScreen.style.display !== "none" || document.getElementById("language-screen").style.display !== "none") return;
+            if (chapterOverlay.classList.contains("show")) return;
+            if (choicesContainer.innerHTML !== "") return;
+
+            if (isTyping) {
+                clearInterval(charTimer);
+                clearInterval(mouthTimer);
+                mouthOpen = false;
+                displayedString = fullString;
+                dialogEl.innerText = displayedString;
+                isTyping = false;
+                const current = script[currentIndex];
+                if (current) drawSceneArt(current.bg, current.char, false);
+            } else {
+                currentIndex++;
+                loadStep();
+            }
+        }
+
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "Space" || e.code === "Enter") {
+                e.preventDefault();
+                handleDialogClick();
+            }
+        });
+
+        function renderLinDecision() {
+            playPressureSound();
+            if (currentLang === 'th') {
+                speakerEl.innerText = "ลิน: อนาคต";
+                dialogEl.innerText = "ลินมีตัวเลือกมากมาย... แต่ทุกทางมีแรงกดดันจากครอบครัว";
+            } else {
+                speakerEl.innerText = "Lin: Future";
+                dialogEl.innerText = "Lin has many choices... but every path carries family pressure.";
+            }
+            drawSceneArt("lin_house", "lin_teen", false);
+            document.body.classList.add("shake");
+
+            const pressures = currentLang === 'th' ? 
+                ["“เรียนมาตั้งขนาดนี้แล้วนะ”", "“จะทิ้งทุกอย่างเลยเหรอ?”", "“พ่อแม่ลงทุนกับแกไปเท่าไหร่”"] :
+                ["\"You've studied this long.\"", "\"You're throwing it all away?\"", "\"How much did we invest in you?\""];
+            
+            pressures.forEach((p, i) => {
+                const div = document.createElement("div");
+                div.className = "floating-text";
+                div.innerText = p;
+                div.style.left = (22 + (i * 28)) + "%";
+                div.style.top = (18 + (i * 14)) + "%";
+                pressureBox.appendChild(div);
+            });
+
+            const options = currentLang === 'th' ? 
+                ["เรียนต่อ", "เปลี่ยนสาย", "หยุดเรียนหนึ่งปี", "ทำงาน"] :
+                ["Continue Studies", "Change Major", "Gap Year", "Work"];
+
+            options.forEach(opt => {
+                const btn = document.createElement("button");
+                btn.className = "choice-btn";
+                btn.innerText = opt;
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    document.body.classList.remove("shake");
+                    currentIndex++;
+                    loadStep();
+                };
+                choicesContainer.appendChild(btn);
+            });
+        }
+
+        function renderNonDecision() {
+            if (currentLang === 'th') {
+                speakerEl.innerText = "นนท์: อนาคต";
+                dialogEl.innerText = "นนท์ไม่มีปัญหาว่าเลือกอะไร แต่เขา 'เลือกไม่ได้ตั้งแต่แรก'";
+            } else {
+                speakerEl.innerText = "Non: Future";
+                dialogEl.innerText = "Non doesn't care what to choose, because he 'couldn't choose in the first place'.";
+            }
+            drawSceneArt("non_house", "non_teen", false);
+
+            const options = currentLang === 'th' ? [
+                { text: "เรียนต่อ (❌ เงินไม่พอ)", disabled: true },
+                { text: "ทำงาน", disabled: false },
+                { text: "ดูแลแม่", disabled: false },
+                { text: "ช่วยจ่ายหนี้", disabled: false }
+            ] : [
+                { text: "Continue Studies (❌ Not enough money)", disabled: true },
+                { text: "Work", disabled: false },
+                { text: "Take care of Mom", disabled: false },
+                { text: "Help pay debts", disabled: false }
+            ];
+
+            options.forEach(opt => {
+                const btn = document.createElement("button");
+                btn.className = "choice-btn" + (opt.disabled ? " disabled" : "");
+                btn.innerText = opt.text;
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    if (opt.disabled) {
+                        playErrorSound();
+                        document.body.classList.add("shake");
+                        setTimeout(() => document.body.classList.remove("shake"), 300);
+                        dialogEl.innerText = currentLang === 'th' ? "❌ “เงินไม่พอ / คุณไม่มีค่าใช้จ่ายสำหรับเดือนหน้า”" : "❌ \"Not enough money / You have no funds for next month\"";
+                    } else {
+                        currentIndex++;
+                        loadStep();
+                    }
+                };
+                choicesContainer.appendChild(btn);
+            });
+        }
+
+        function renderFinalQuestion() {
+            if (currentLang === 'th') {
+                speakerEl.innerText = "คำถามสุดท้าย";
+                dialogEl.innerText = "ถ้าคุณรู้ว่าตัวเองไม่พร้อมจะมีลูก คุณจะทำอย่างไร?";
+            } else {
+                speakerEl.innerText = "Final Question";
+                dialogEl.innerText = "If you knew you weren't ready to have a child, what would you do?";
+            }
+            drawSceneArt("dark", "none", false);
+
+            const options = currentLang === 'th' ? 
+                ["ฉันจะมีลูกอยู่ดี", "ฉันจะรอจนกว่าจะพร้อม", "ฉันไม่รู้"] :
+                ["I would still have a child", "I would wait until I'm ready", "I don't know"];
+
+            options.forEach(opt => {
+                const btn = document.createElement("button");
+                btn.className = "choice-btn";
+                btn.innerText = opt;
+                btn.onclick = (e) => {
+                    e.stopPropagation();
+                    dialogEl.innerText = currentLang === 'th' ? 
+                        "“เด็กคนนั้นตอบคำถามนี้แทนคุณไม่ได้... หนูไม่ได้ขอเกิด”" : 
+                        "\"That child cannot answer this question for you... I never asked to be born.\"";
+                    choicesContainer.innerHTML = "";
+                    setTimeout(() => { currentIndex++; loadStep(); }, 4500);
+                };
+                choicesContainer.appendChild(btn);
+            });
+        }
+
+        function renderCredits() {
+            if (currentLang === 'th') {
+                speakerEl.innerText = "เครดิต & สัจธรรม";
+                drawSceneArt("dark", "none", false);
+                document.getElementById("prompt-hint").style.display = "none";
+
+                const lines = [
+                    "ลิน: ได้เรียน, ได้รับการดูแล, มีเงิน, มีทางเลือก — แต่ใช้ชีวิตด้วยความกลัวว่าจะทำให้พ่อแม่ผิดหวัง",
+                    "นนท์: ต้องทำงาน, ต้องดูแลครอบครัว, มีหนี้, ไม่มีโอกาสเท่ากัน — และโตมากับความรู้สึกว่าตัวเองเป็นความผิดพลาด",
+                    "เด็กสองคนไม่ได้เลือกว่าจะเกิดมา...",
+                    "แต่คนหนึ่งเกิดมาเพื่อเป็นความสำเร็จของครอบครัว",
+                    "อีกคนเกิดมาเพื่อเป็นเหตุผลที่ครอบครัวต้องลำบาก",
+                    "“ไม่มีเด็กคนไหนควรต้องชดใช้ให้กับการตัดสินใจของผู้ใหญ่”",
+                    "Written & Directed by L. ASH"
+                ];
+
+                let lineIdx = 0;
+                dialogEl.innerText = lines[lineIdx];
+
+                const creditTimer = setInterval(() => {
+                    lineIdx++;
+                    if (lineIdx < lines.length) {
+                        dialogEl.innerText = lines[lineIdx];
+                        playMurmurSound();
+                    } else {
+                        clearInterval(creditTimer);
+                        dialogEl.innerText += "\n\n" + i18n.th.creditsEnd;
+                    }
+                }, 5500);
+            } else {
+                speakerEl.innerText = "Credits & Truth";
+                drawSceneArt("dark", "none", false);
+                document.getElementById("prompt-hint").style.display = "none";
+
+                const lines = [
+                    "Lin: Got education, care, money, choices — but lives in fear of disappointing her parents.",
+                    "Non: Must work, support the family, carries debt, lacks equal opportunity — and grew up feeling like a mistake.",
+                    "Neither child chose to be born...",
+                    "Yet one was born to be the family's success story.",
+                    "The other was born to be the reason the family struggles.",
+                    "\"No child should ever have to pay for the decisions of adults.\"",
+                    "Written & Directed by L. ASH"
+                ];
+
+                let lineIdx = 0;
+                dialogEl.innerText = lines[lineIdx];
+
+                const creditTimer = setInterval(() => {
+                    lineIdx++;
+                    if (lineIdx < lines.length) {
+                        dialogEl.innerText = lines[lineIdx];
+                        playMurmurSound();
+                    } else {
+                        clearInterval(creditTimer);
+                        dialogEl.innerText += "\n\n" + i18n.en.creditsEnd;
+                    }
+                }, 5500);
+            }
+        }
+
+        // --- Dual Tone Artwork Engine ---
+        function drawSceneArt(bgType, charType, mouthOpen = false) {
+            let bgSvg = "";
+            if (bgType === "lin_house") {
+                bgSvg = `<defs>
+                            <linearGradient id="linBg" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#260f0f"/>
+                                <stop offset="100%" stop-color="#0f0505"/>
+                            </linearGradient>
+                         </defs>
+                         <rect width="1000" height="470" fill="url(#linBg)"/>
+                         <path d="M50 410 L500 350 L950 410" stroke="#5c2626" stroke-width="3" fill="none"/>
+                         <rect x="330" y="60" width="340" height="220" rx="6" fill="#1c0a0a" stroke="#7a3333" stroke-width="2"/>
+                         <text x="500" y="175" fill="#b36666" font-size="24" font-weight="600" text-anchor="middle" font-family="Sarabun">${currentLang === 'th' ? '🎓 ใบประกาศ & เกียรติบัตร (ลิน)' : '🎓 Certificates & Awards (Lin)'}</text>`;
+            } else if (bgType === "non_house") {
+                bgSvg = `<defs>
+                            <linearGradient id="nonBg" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#0d1426"/>
+                                <stop offset="100%" stop-color="#03050a"/>
+                            </linearGradient>
+                         </defs>
+                         <rect width="1000" height="470" fill="url(#nonBg)"/>
+                         <path d="M50 410 L500 350 L950 410" stroke="#263b5c" stroke-width="3" fill="none"/>
+                         <line x1="200" y1="70" x2="200" y2="410" stroke="#192b4a" stroke-width="6"/>
+                         <text x="500" y="180" fill="#6699cc" font-size="24" font-weight="600" text-anchor="middle" font-family="Sarabun">${currentLang === 'th' ? '📄 บิลค่าไฟ & ใบแจ้งหนี้ (นนท์)' : '📄 Electric Bills & Invoices (Non)'}</text>`;
+            } else if (bgType === "school") {
+                bgSvg = `<defs>
+                            <linearGradient id="schBg" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stop-color="#141926"/>
+                                <stop offset="100%" stop-color="#05070d"/>
+                            </linearGradient>
+                         </defs>
+                         <rect width="1000" height="470" fill="url(#schBg)"/>
+                         <path d="M0 390 Q 500 360 1000 390" stroke="#243359" stroke-width="3" fill="none"/>
+                         <circle cx="500" cy="160" r="60" fill="none" stroke="#364d7a" stroke-width="2" stroke-dasharray="10 8"/>
+                         <text x="500" y="168" fill="#7aa3cc" font-size="19" text-anchor="middle" font-family="Sarabun">${currentLang === 'th' ? 'โรงเรียนเก่า / จุดเปลี่ยนทางเดินชีวิต' : 'Old School / Crossroads of Life'}</text>`;
+            } else {
+                bgSvg = `<rect width="1000" height="470" fill="#030105"/>`;
+            }
+
+            let charSvg = "";
+            const mouthH = mouthOpen ? 16 : 5;
+            const bodySway = mouthOpen ? "transform='translate(0, -4)'" : "";
+
+            if (charType === "lin_child") {
+                charSvg = `
+                <g ${bodySway}>
+                    <path d="M465 155 Q445 130 460 115 M535 155 Q555 130 540 115" stroke="#cc9999" stroke-width="6" fill="none" stroke-linecap="round"/>
+                    <circle cx="500" cy="170" r="38" fill="#fceade" stroke="#b08d79" stroke-width="2.5"/>
+                    <ellipse cx="487" cy="168" rx="4" ry="6" fill="#3a2e2b"/>
+                    <ellipse cx="513" cy="168" rx="4" ry="6" fill="#3a2e2b"/>
+                    <circle cx="488" cy="166" r="1.5" fill="#fff"/>
+                    <circle cx="514" cy="166" r="1.5" fill="#fff"/>
+                    <ellipse cx="500" cy="188" rx="6" ry="${mouthH/2}" fill="#cc7777"/>
+                    <path d="M468 208 L532 208 L545 320 L455 320 Z" fill="#2e1414" stroke="#8c4040" stroke-width="2.5"/>
+                    <path d="M490 208 L500 230 L510 208" fill="none" stroke="#fff" stroke-width="2"/>
+                    <path d="M468 220 L425 270 M532 220 L575 270" stroke="#fceade" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M472 320 L485 390 M528 320 L515 390" stroke="#2e1414" stroke-width="6" stroke-linecap="round"/>
+                </g>`;
+            } else if (charType === "non_child") {
+                charSvg = `
+                <g ${bodySway}>
+                    <path d="M465 150 L478 132 L492 142 L508 130 L522 140 L535 135" stroke="#5e758c" stroke-width="7" fill="none" stroke-linecap="round"/>
+                    <circle cx="500" cy="172" r="36" fill="#dadefc" stroke="#7988b0" stroke-width="2.5"/>
+                    <ellipse cx="488" cy="170" rx="3.5" ry="5.5" fill="#2b313a"/>
+                    <ellipse cx="512" cy="170" rx="3.5" ry="5.5" fill="#2b313a"/>
+                    <circle cx="489" cy="168" r="1.2" fill="#fff"/>
+                    <circle cx="513" cy="168" r="1.2" fill="#fff"/>
+                    <ellipse cx="500" cy="190" rx="5.5" ry="${mouthH/2}" fill="#779fcc"/>
+                    <path d="M472 208 L528 208 L538 315 L462 315 Z" fill="#14202e" stroke="#40648c" stroke-width="2.5"/>
+                    <path d="M472 220 L435 265 M528 220 L565 265" stroke="#dadefc" stroke-width="5" stroke-linecap="round"/>
+                    <path d="M476 315 L488 385 M524 315 L512 385" stroke="#14202e" stroke-width="6" stroke-linecap="round"/>
+                </g>`;
+            } else if (charType === "lin_teen") {
+                charSvg = `
+                <g ${bodySway}>
+                    <path d="M530 155 Q570 145 590 185 Q575 220 550 230" stroke="#bb8888" stroke-width="12" fill="none" stroke-linecap="round"/>
+                    <circle cx="500" cy="162" r="40" fill="#fceade" stroke="#b08d79" stroke-width="2.5"/>
+                    <path d="M470 145 Q500 135 530 148" stroke="#bb8888" stroke-width="7" fill="none"/>
+                    <ellipse cx="486" cy="158" rx="4" ry="7" fill="#3b2b2b"/>
+                    <ellipse cx="514" cy="158" rx="4" ry="7" fill="#3b2b2b"/>
+                    <circle cx="487" cy="156" r="1.5" fill="#fff"/>
+                    <circle cx="515" cy="156" r="1.5" fill="#fff"/>
+                    <ellipse cx="500" cy="182" rx="7" ry="${mouthH/2}" fill="#b85c5c"/>
+                    <path d="M455 200 L545 200 L560 335 L440 335 Z" fill="#331414" stroke="#a34747" stroke-width="2.5"/>
+                    <path d="M480 200 L500 230 L520 200" fill="none" stroke="#fff" stroke-width="2.5"/>
+                    <path d="M455 218 L405 275 M545 218 L595 275" stroke="#fceade" stroke-width="6" stroke-linecap="round"/>
+                    <path d="M460 335 L475 420 M540 335 L525 420" stroke="#331414" stroke-width="7" stroke-linecap="round"/>
+                </g>`;
+            } else if (charType === "non_teen") {
+                charSvg = `
+                <g ${bodySway}>
+                    <path d="M462 150 Q485 130 505 138 Q525 130 542 148" stroke="#485c70" stroke-width="9" fill="none" stroke-linecap="round"/>
+                    <circle cx="500" cy="164" r="38" fill="#d6e2f5" stroke="#708aa3" stroke-width="2.5"/>
+                    <ellipse cx="486" cy="162" rx="3.5" ry="6" fill="#2b333b"/>
+                    <ellipse cx="514" cy="162" rx="3.5" ry="6" fill="#2b333b"/>
+                    <circle cx="487" cy="160" r="1.2" fill="#fff"/>
+                    <circle cx="515" cy="160" r="1.2" fill="#fff"/>
+                    <ellipse cx="500" cy="184" rx="6.5" ry="${mouthH/2}" fill="#5c88b8"/>
+                    <path d="M460 200 L540 200 L555 335 L445 335 Z" fill="#0f192b" stroke="#33618c" stroke-width="2.5"/>
+                    <path d="M460 218 L410 280 M540 218 L590 280" stroke="#d6e2f5" stroke-width="6" stroke-linecap="round"/>
+                    <path d="M462 335 L475 420 M538 335 L525 420" stroke="#0f192b" stroke-width="7" stroke-linecap="round"/>
+                </g>`;
+            } else if (charType === "parents_shadow_red") {
+                charSvg = `
+                <g stroke="#ff5252" stroke-width="4" fill="none" stroke-dasharray="14 6" opacity="0.85">
+                    <path d="M330 430 L360 100 L440 100 L470 430" fill="rgba(40,10,10,0.7)"/>
+                    <circle cx="400" cy="75" r="30" fill="#1c0a0a"/>
+                    <path d="M530 430 L560 80 L640 80 L670 430" fill="rgba(40,10,10,0.7)"/>
+                    <circle cx="600" cy="55" r="34" fill="#1c0a0a"/>
+                </g>`;
+            } else if (charType === "parents_shadow_blue") {
+                charSvg = `
+                <g stroke="#529cff" stroke-width="4" fill="none" stroke-dasharray="14 6" opacity="0.85">
+                    <path d="M330 430 L360 100 L440 100 L470 430" fill="rgba(10,20,40,0.7)"/>
+                    <circle cx="400" cy="75" r="30" fill="#0a121c"/>
+                    <path d="M530 430 L560 80 L640 80 L670 430" fill="rgba(10,20,40,0.7)"/>
+                    <circle cx="600" cy="55" r="34" fill="#0a121c"/>
+                </g>`;
+            } else {
+                charSvg = "";
+            }
+
+            artCanvas.innerHTML = bgSvg + charSvg;
+        }
+    </script>
+</body>
+</html>
